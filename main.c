@@ -15,7 +15,7 @@
  */
 
 /* ---- 全局变量 ---- */
-unsigned char g_frequency = 1;  /* 当前输出频率, 初始 1Hz */
+volatile unsigned char g_frequency = 1;  /* 当前输出频率, 初始 1Hz */
 
 void main(void)
 {

@@ -23,7 +23,7 @@
 #define FREQ_MAX        20
 
 /* 外部全局变量 (在 main.c 中定义) */
-extern unsigned char g_frequency;
+extern volatile unsigned char g_frequency;
 
 void SPWM_Init(void);
 void SPWM_UpdateFreq(void);

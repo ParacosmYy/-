@@ -62,12 +62,13 @@ static unsigned char phase;         /* 相位标志: 0=LOW相, 1=HIGH相 */
 static unsigned char current_duty;  /* 当前占空比值 */
 
 /* ---- Timer0 中断服务程序 ---- */
-void Timer0_ISR(void) interrupt 1
+void Timer0_ISR(void) interrupt 1 using 1
 {
     unsigned int ticks;
     unsigned int reload;
+    unsigned int elapsed;
 
-    TR0 = 0;    /* 停止定时器 */
+    /* 不立即停定时器, 让它在计算期间继续计数, 便于补偿 */
 
     if (phase == 0) {
         /* ---- LOW 相: PWM 输出低电平 ---- */
@@ -80,14 +81,6 @@ void Timer0_ISR(void) interrupt 1
         ticks = (unsigned long)sample_ticks[g_frequency - 1]
                 * (PWM_LEVELS - current_duty) / PWM_LEVELS;
 
-        if (ticks < MIN_PHASE_TICKS) {
-            ticks = MIN_PHASE_TICKS;
-        }
-
-        reload = 65536 - ticks;
-        TH0 = (unsigned char)(reload >> 8);
-        TL0 = (unsigned char)(reload & 0xFF);
-
         phase = 1;
     } else {
         /* ---- HIGH 相: PWM 输出高电平 ---- */
@@ -97,14 +90,6 @@ void Timer0_ISR(void) interrupt 1
         ticks = (unsigned long)sample_ticks[g_frequency - 1]
                 * current_duty / PWM_LEVELS;
 
-        if (ticks < MIN_PHASE_TICKS) {
-            ticks = MIN_PHASE_TICKS;
-        }
-
-        reload = 65536 - ticks;
-        TH0 = (unsigned char)(reload >> 8);
-        TL0 = (unsigned char)(reload & 0xFF);
-
         /* 两相完成后才推进到下一个采样点 */
         table_index++;
         if (table_index >= SINE_POINTS) {
@@ -113,6 +98,23 @@ void Timer0_ISR(void) interrupt 1
 
         phase = 0;
     }
+
+    if (ticks < MIN_PHASE_TICKS) {
+        ticks = MIN_PHASE_TICKS;
+    }
+
+    /* 停定时器, 读取溢出后已计数的 tick 数, 补偿 ISR 耗时 */
+    TR0 = 0;
+    elapsed = ((unsigned int)TH0 << 8) | TL0;
+    if (ticks > elapsed) {
+        ticks -= elapsed;
+    } else {
+        ticks = MIN_PHASE_TICKS;
+    }
+
+    reload = 65536 - ticks;
+    TH0 = (unsigned char)(reload >> 8);
+    TL0 = (unsigned char)(reload & 0xFF);
 
     TR0 = 1;    /* 重启定时器 */
 }

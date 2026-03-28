@@ -17,7 +17,7 @@
 #define DISP_SCAN_MS    2
 
 /* 外部全局变量 */
-extern unsigned char g_frequency;
+extern volatile unsigned char g_frequency;
 
 void Display_Init(void);
 void Display_Refresh(void);

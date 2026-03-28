@@ -1,4 +1,5 @@
 #include "delay.h"
+#include <intrins.h>
 
 /*
  * 延时模块实现
@@ -20,6 +21,6 @@ void Delay_ms(unsigned int ms)
 void Delay_us(unsigned int us)
 {
     while (us--) {
-        /* 空循环约 1us (11.0592MHz 下约 1 个机器周期) */
+        _nop_();    /* 每次循环约 3 个机器周期 (NOP+DJNZ) ≈ 3.3us */
     }
 }
