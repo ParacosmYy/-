@@ -76,7 +76,8 @@ void Timer0_ISR(void) interrupt 1
         current_duty = sine_table[table_index];
 
         /* 低电平持续时间 = 采样周期 × (100-duty) / 100 */
-        ticks = (unsigned int)sample_ticks[g_frequency - 1]
+        /* 使用 unsigned long 防止乘法溢出 (8051 int 为16位) */
+        ticks = (unsigned long)sample_ticks[g_frequency - 1]
                 * (PWM_LEVELS - current_duty) / PWM_LEVELS;
 
         if (ticks < MIN_PHASE_TICKS) {
@@ -92,16 +93,8 @@ void Timer0_ISR(void) interrupt 1
         /* ---- HIGH 相: PWM 输出高电平 ---- */
         SPWM_PIN = 1;
 
-        /* 推进到下一个采样点 */
-        table_index++;
-        if (table_index >= SINE_POINTS) {
-            table_index = 0;
-        }
-
-        current_duty = sine_table[table_index];
-
-        /* 高电平持续时间 = 采样周期 × duty / 100 */
-        ticks = (unsigned int)sample_ticks[g_frequency - 1]
+        /* 使用当前采样点的 duty 计算 HIGH 时间 (与 LOW 相同一个点) */
+        ticks = (unsigned long)sample_ticks[g_frequency - 1]
                 * current_duty / PWM_LEVELS;
 
         if (ticks < MIN_PHASE_TICKS) {
@@ -111,6 +104,12 @@ void Timer0_ISR(void) interrupt 1
         reload = 65536 - ticks;
         TH0 = (unsigned char)(reload >> 8);
         TL0 = (unsigned char)(reload & 0xFF);
+
+        /* 两相完成后才推进到下一个采样点 */
+        table_index++;
+        if (table_index >= SINE_POINTS) {
+            table_index = 0;
+        }
 
         phase = 0;
     }
