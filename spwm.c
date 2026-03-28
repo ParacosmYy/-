@@ -8,11 +8,9 @@
  *       Timer0 中断分为两相: LOW相 + HIGH相,
  *       通过改变两相的定时器重装载值来控制占空比.
  *
- * 频率调节: 修改 g_frequency 后, ISR 自动查表获取新的采样周期.
- *
  * ISR 优化: 使用 q/r 分解法避免 32 位乘除法.
- *   sample_ticks[f] = tick_q[f] * 100 + tick_r[f]
- *   ticks = tick_q[f] * duty + (tick_r[f] * duty) / 100
+ *   sample_ticks[f] = tick_q[f] * PWM_LEVELS + tick_r[f]
+ *   ticks = tick_q[f] * duty + (tick_r[f] * duty) / PWM_LEVELS
  *   所有中间运算均为 16 位, 在 8051 上约 60~75 机器周期.
  */
 
@@ -73,7 +71,6 @@ void Timer0_ISR(void) interrupt 1 using 1
 
     /* 不立即停定时器, 让它在计算期间继续计数, 便于补偿 */
 
-    /* 频率索引 (g_frequency 范围 FREQ_MIN~FREQ_MAX, 减 1 得 0-based 索引) */
     idx = g_frequency - 1;
     q = tick_q[idx];
     r = tick_r[idx];
@@ -81,17 +78,12 @@ void Timer0_ISR(void) interrupt 1 using 1
     if (phase == 0) {
         /* ---- LOW 相: PWM 输出低电平 ---- */
         SPWM_PIN = 0;
-
         current_duty = sine_table[table_index];
-
-        /* 低电平持续时间 = q*(100-duty) + (r*(100-duty))/100 */
         d = PWM_LEVELS - current_duty;
         phase = 1;
     } else {
         /* ---- HIGH 相: PWM 输出高电平 ---- */
         SPWM_PIN = 1;
-
-        /* 高电平持续时间 = q*duty + (r*duty)/100 */
         d = current_duty;
 
         /* 两相完成后才推进到下一个采样点 */
@@ -119,11 +111,10 @@ void Timer0_ISR(void) interrupt 1 using 1
         ticks = MIN_PHASE_TICKS;
     }
 
-    reload = (unsigned int)(0 - ticks);     /* 无符号回绕, 等效 65536-ticks, 纯 16 位 */
+    reload = (unsigned int)(0 - ticks);
     TH0 = (unsigned char)(reload >> 8);
     TL0 = (unsigned char)(reload & 0xFF);
-
-    TR0 = 1;    /* 重启定时器 */
+    TR0 = 1;
 }
 
 /* ---- 初始化 ---- */
@@ -136,10 +127,10 @@ void SPWM_Init(void)
     SPWM_PIN = 0;
 
     /* Timer0, Mode 1 (16位定时器) */
-    TMOD &= 0xF0;      /* 清除 Timer0 低4位 */
-    TMOD |= 0x01;      /* Mode 1: 16位 */
+    TMOD &= 0xF0;
+    TMOD |= 0x01;
 
-    /* 初始装载: 从 1Hz 开始 (还原 sample_ticks[0] = tick_q[0]*100 + tick_r[0]) */
+    /* 初始装载: 从 1Hz 开始 */
     {
         unsigned int init_reload;
         init_reload = (unsigned int)(0 - ((unsigned int)tick_q[0] * PWM_LEVELS + tick_r[0]));
@@ -147,10 +138,9 @@ void SPWM_Init(void)
         TL0 = (unsigned char)(init_reload & 0xFF);
     }
 
-    /* 开中断 */
+    /* Timer0 高优先级, 可抢占 Timer1, 保证波形精度 */
     ET0 = 1;
-    PT0 = 1;        /* Timer0 高优先级, 可抢占 Timer1 (显示), 保证波形精度 */
-
-    /* 启动定时器 */
+    PT0 = 1;
     TR0 = 1;
 }
+

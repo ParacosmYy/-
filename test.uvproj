@@ -387,11 +387,6 @@
               <FilePath>.\main.c</FilePath>
             </File>
             <File>
-              <FileName>delay.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\delay.c</FilePath>
-            </File>
-            <File>
               <FileName>spwm.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\spwm.c</FilePath>
