@@ -1,5 +1,5 @@
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+#ifndef CONFIG_H_
+#define CONFIG_H_
 
 #include <REGX52.H>
 

@@ -119,7 +119,7 @@ void Timer0_ISR(void) interrupt 1 using 1
         ticks = MIN_PHASE_TICKS;
     }
 
-    reload = 65536 - ticks;
+    reload = (unsigned int)(0 - ticks);     /* 无符号回绕, 等效 65536-ticks, 纯 16 位 */
     TH0 = (unsigned char)(reload >> 8);
     TL0 = (unsigned char)(reload & 0xFF);
 
@@ -142,14 +142,13 @@ void SPWM_Init(void)
     /* 初始装载: 从 1Hz 开始 (还原 sample_ticks[0] = tick_q[0]*100 + tick_r[0]) */
     {
         unsigned int init_reload;
-        init_reload = 65536 - ((unsigned int)tick_q[0] * PWM_LEVELS + tick_r[0]);
+        init_reload = (unsigned int)(0 - ((unsigned int)tick_q[0] * PWM_LEVELS + tick_r[0]));
         TH0 = (unsigned char)(init_reload >> 8);
         TL0 = (unsigned char)(init_reload & 0xFF);
     }
 
     /* 开中断 */
     ET0 = 1;
-    EA = 1;
     PT0 = 1;        /* Timer0 高优先级, 可抢占 Timer1 (显示), 保证波形精度 */
 
     /* 启动定时器 */

@@ -1,5 +1,5 @@
-#ifndef __KEY_H__
-#define __KEY_H__
+#ifndef KEY_H_
+#define KEY_H_
 
 #include "config.h"
 

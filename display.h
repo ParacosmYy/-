@@ -1,5 +1,5 @@
-#ifndef __DISPLAY_H__
-#define __DISPLAY_H__
+#ifndef DISPLAY_H_
+#define DISPLAY_H_
 
 #include "config.h"
 

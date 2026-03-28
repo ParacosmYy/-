@@ -1,5 +1,5 @@
-#ifndef __SPWM_H__
-#define __SPWM_H__
+#ifndef SPWM_H_
+#define SPWM_H_
 
 #include "config.h"
 

@@ -24,8 +24,10 @@ void main(void)
     Display_Init();
     Key_Init();
 
+    EA = 1;     /* 所有外设初始化完成后再开全局中断 */
+
     while (1) {
-        /* 等待 Timer1 的 ~2ms 节拍 */
+        /* 等待 Timer1 的 ~2ms 节拍, 空闲时进入 IDLE 省电 */
         if (g_tick) {
             g_tick = 0;
 
@@ -42,6 +44,8 @@ void main(void)
                     }
                 }
             }
+        } else {
+            PCON |= 0x01;   /* IDLE 模式, 任何中断自动唤醒 */
         }
     }
 }
