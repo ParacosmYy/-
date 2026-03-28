@@ -1,0 +1,29 @@
+# Keil build artifacts
+Objects/
+Listings/
+*.lst
+*.m51
+*.lnp
+*.htm
+*.map
+*.obj
+*.o
+*.crf
+*.dep
+*.d
+*.axf
+*.elf
+*.hex
+*.bin
+
+# Keil user/session files
+*.uvgui.*
+*.uvopt
+
+# VS Code / local tooling
+.vscode/
+.claude/
+
+# OS files
+Thumbs.db
+.DS_Store

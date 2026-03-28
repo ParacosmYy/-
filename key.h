@@ -1,0 +1,22 @@
+#ifndef __KEY_H__
+#define __KEY_H__
+
+#include <REGX52.H>
+
+/*
+ * 按键输入模块
+ * K1: 频率增加, K2: 频率减少
+ * 软件消抖, 主循环扫描
+ */
+
+/* 按键引脚定义 */
+#define KEY_FREQ_UP     P3_3    /* K1: 频率+ (INT1 引脚) */
+#define KEY_FREQ_DOWN   P3_2    /* K2: 频率- (INT0 引脚) */
+
+/* 按键消抖延时 (ms) */
+#define KEY_DEBOUNCE_MS  20
+
+void Key_Init(void);
+void Key_Scan(void);
+
+#endif
