@@ -28,8 +28,8 @@
 #define DIG_TENS        P2_0            /* 十位位选 (低电平有效) */
 #define DIG_ONES        P2_1            /* 个位位选 (低电平有效) */
 
-/* ---- 数码管扫描时间 ---- */
-#define DISP_SCAN_MS    2               /* 每位显示保持时间 (ms) */
+/* ---- 数码管扫描 (Timer1 Mode 2 驱动) ---- */
+#define DISP_TIMER_DIV  7               /* Timer1 分频: 7 × 278us ≈ 1.94ms ≈ 2ms */
 
 /* ---- 按键引脚 ---- */
 #define KEY_FREQ_UP     P3_3            /* K1: 频率+ */
@@ -42,5 +42,8 @@
 
 /* ---- 全局变量 (在 main.c 中定义) ---- */
 extern volatile unsigned char g_frequency;
+
+/* ---- 系统节拍 (在 display.c Timer1 ISR 中置位) ---- */
+extern volatile unsigned char g_tick;
 
 #endif

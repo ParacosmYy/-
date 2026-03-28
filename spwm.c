@@ -150,6 +150,7 @@ void SPWM_Init(void)
     /* 开中断 */
     ET0 = 1;
     EA = 1;
+    PT0 = 1;        /* Timer0 高优先级, 可抢占 Timer1 (显示), 保证波形精度 */
 
     /* 启动定时器 */
     TR0 = 1;
