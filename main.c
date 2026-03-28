@@ -1,4 +1,4 @@
-#include <REGX52.H>
+#include "config.h"
 #include "spwm.h"
 #include "display.h"
 #include "key.h"
@@ -25,6 +25,19 @@ void main(void)
 
     while (1) {
         Display_Refresh();    /* 动态扫描数码管 */
-        Key_Scan();           /* 按键扫描与处理 */
+
+        /* 按键事件处理: 由主循环统一协调频率修改 */
+        {
+            KeyEvent evt = Key_Scan();
+            if (evt == KEY_UP) {
+                if (g_frequency < FREQ_MAX) {
+                    g_frequency++;
+                }
+            } else if (evt == KEY_DOWN) {
+                if (g_frequency > FREQ_MIN) {
+                    g_frequency--;
+                }
+            }
+        }
     }
 }

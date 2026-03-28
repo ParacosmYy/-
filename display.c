@@ -1,3 +1,4 @@
+#include "config.h"
 #include "display.h"
 #include "delay.h"
 
@@ -38,27 +39,18 @@ void Display_Init(void)
 /* ---- 动态扫描刷新 (主循环中调用) ---- */
 void Display_Refresh(void)
 {
-    unsigned char tens;
-    unsigned char ones;
-
     /* 先熄灭, 消鬼影 */
     DIG_TENS = 1;
     DIG_ONES = 1;
 
-    /* 计算十位和个位数字 */
-    tens = g_frequency / 10;
-    ones = g_frequency % 10;
-
     if (scan_flag == 0) {
         /* ---- 显示十位 ---- */
-        SEG_PORT = seg_table[tens];
+        SEG_PORT = seg_table[g_frequency / 10];
         DIG_TENS = 0;       /* 选中十位 */
-        DIG_ONES = 1;       /* 关闭个位 */
         scan_flag = 1;
     } else {
         /* ---- 显示个位 ---- */
-        SEG_PORT = seg_table[ones];
-        DIG_TENS = 1;       /* 关闭十位 */
+        SEG_PORT = seg_table[g_frequency % 10];
         DIG_ONES = 0;       /* 选中个位 */
         scan_flag = 0;
     }

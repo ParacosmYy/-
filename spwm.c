@@ -9,6 +9,11 @@
  *       通过改变两相的定时器重装载值来控制占空比.
  *
  * 频率调节: 修改 g_frequency 后, ISR 自动查表获取新的采样周期.
+ *
+ * ISR 优化: 使用 q/r 分解法避免 32 位乘除法.
+ *   sample_ticks[f] = tick_q[f] * 100 + tick_r[f]
+ *   ticks = tick_q[f] * duty + (tick_r[f] * duty) / 100
+ *   所有中间运算均为 16 位, 在 8051 上约 60~75 机器周期.
  */
 
 /* ---- 正弦查找表 (CODE 段, 存 ROM) ---- */
@@ -26,34 +31,28 @@ const unsigned char code sine_table[SINE_POINTS] = {
     20, 23, 26, 28, 31, 34, 37, 40, 43, 46
 };
 
-/* ---- 各频率对应的采样周期 (机器周期数) ---- */
 /*
- * T_sample = FOSC / 12 / (SINE_POINTS * freq)
- * 11.0592MHz / 12 = 921600 Hz (1 machine cycle = 1.085us)
- *
- * sample_ticks[f] = 921600 / (100 * (f+1))
+ * 采样周期公式 (仅作文档参考, 数组已删除):
+ * T_sample[f] = FOSC / 12 / (SINE_POINTS * freq)
+ *             = 921600 / (100 * (f+1))  (f 为 0-based 索引)
+ * 可从 tick_q / tick_r 还原: T_sample = tick_q[f] * PWM_LEVELS + tick_r[f]
  */
-const unsigned int code sample_ticks[FREQ_MAX] = {
-     9216,  /*  1Hz */
-     4608,  /*  2Hz */
-     3072,  /*  3Hz */
-     2304,  /*  4Hz */
-     1843,  /*  5Hz */
-     1536,  /*  6Hz */
-     1317,  /*  7Hz */
-     1152,  /*  8Hz */
-     1024,  /*  9Hz */
-      922,  /* 10Hz */
-      838,  /* 11Hz */
-      768,  /* 12Hz */
-      709,  /* 13Hz */
-      658,  /* 14Hz */
-      614,  /* 15Hz */
-      576,  /* 16Hz */
-      542,  /* 17Hz */
-      512,  /* 18Hz */
-      485,  /* 19Hz */
-      461   /* 20Hz */
+
+/* ---- q/r 分解表 (避免 ISR 中 32 位乘除法) ---- */
+/*
+ * sample_ticks[f] = tick_q[f] * PWM_LEVELS + tick_r[f]
+ * ticks = tick_q[f] * duty + (tick_r[f] * duty) / PWM_LEVELS
+ *
+ * tick_q 和 tick_r 均 < 100, 与 duty (<100) 相乘后不超出 uint16,
+ * ISR 中只需 16 位运算.
+ */
+const unsigned char code tick_q[FREQ_MAX] = {
+    92, 46, 30, 23, 18, 15, 13, 11, 10,  9,
+     8,  7,  7,  6,  6,  5,  5,  5,  4,  4
+};
+const unsigned char code tick_r[FREQ_MAX] = {
+    16,  8, 72,  4, 43, 36, 17, 52, 24, 22,
+    38, 68,  9, 58, 14, 76, 42, 12, 85, 61
 };
 
 /* ---- 模块内部变量 ---- */
@@ -67,8 +66,17 @@ void Timer0_ISR(void) interrupt 1 using 1
     unsigned int ticks;
     unsigned int reload;
     unsigned int elapsed;
+    unsigned char idx;
+    unsigned char q;
+    unsigned char r;
+    unsigned char d;
 
     /* 不立即停定时器, 让它在计算期间继续计数, 便于补偿 */
+
+    /* 频率索引 (g_frequency 范围 FREQ_MIN~FREQ_MAX, 减 1 得 0-based 索引) */
+    idx = g_frequency - 1;
+    q = tick_q[idx];
+    r = tick_r[idx];
 
     if (phase == 0) {
         /* ---- LOW 相: PWM 输出低电平 ---- */
@@ -76,19 +84,15 @@ void Timer0_ISR(void) interrupt 1 using 1
 
         current_duty = sine_table[table_index];
 
-        /* 低电平持续时间 = 采样周期 × (100-duty) / 100 */
-        /* 使用 unsigned long 防止乘法溢出 (8051 int 为16位) */
-        ticks = (unsigned long)sample_ticks[g_frequency - 1]
-                * (PWM_LEVELS - current_duty) / PWM_LEVELS;
-
+        /* 低电平持续时间 = q*(100-duty) + (r*(100-duty))/100 */
+        d = PWM_LEVELS - current_duty;
         phase = 1;
     } else {
         /* ---- HIGH 相: PWM 输出高电平 ---- */
         SPWM_PIN = 1;
 
-        /* 使用当前采样点的 duty 计算 HIGH 时间 (与 LOW 相同一个点) */
-        ticks = (unsigned long)sample_ticks[g_frequency - 1]
-                * current_duty / PWM_LEVELS;
+        /* 高电平持续时间 = q*duty + (r*duty)/100 */
+        d = current_duty;
 
         /* 两相完成后才推进到下一个采样点 */
         table_index++;
@@ -98,6 +102,9 @@ void Timer0_ISR(void) interrupt 1 using 1
 
         phase = 0;
     }
+
+    /* 16 位运算: q*d 最大 92*99=9108, r*d 最大 76*99=7524 */
+    ticks = (unsigned int)q * d + (unsigned int)(r * d) / PWM_LEVELS;
 
     if (ticks < MIN_PHASE_TICKS) {
         ticks = MIN_PHASE_TICKS;
@@ -132,10 +139,10 @@ void SPWM_Init(void)
     TMOD &= 0xF0;      /* 清除 Timer0 低4位 */
     TMOD |= 0x01;      /* Mode 1: 16位 */
 
-    /* 初始装载: 从 1Hz 开始 */
+    /* 初始装载: 从 1Hz 开始 (还原 sample_ticks[0] = tick_q[0]*100 + tick_r[0]) */
     {
         unsigned int init_reload;
-        init_reload = 65536 - sample_ticks[0];
+        init_reload = 65536 - ((unsigned int)tick_q[0] * PWM_LEVELS + tick_r[0]);
         TH0 = (unsigned char)(init_reload >> 8);
         TL0 = (unsigned char)(init_reload & 0xFF);
     }
@@ -146,13 +153,4 @@ void SPWM_Init(void)
 
     /* 启动定时器 */
     TR0 = 1;
-}
-
-/* ---- 更新频率 (按键调用) ---- */
-void SPWM_UpdateFreq(void)
-{
-    /*
-     * ISR 在下次中断时自动使用新的 g_frequency 查表,
-     * 无需额外操作. 此函数留作接口扩展.
-     */
 }
