@@ -1,0 +1,10 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# C source files use LF
+*.c text eol=lf
+*.h text eol=lf
+
+# Keil project files
+*.uvproj text eol=crlf
+*.A51 text eol=crlf

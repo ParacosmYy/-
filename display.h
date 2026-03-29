@@ -12,9 +12,7 @@
 /* ---- 显示扫描参数 ---- */
 #define DISP_TIMER_DIV  7               /* Timer1 分频: 7 × 278us ≈ 1.94ms ≈ 2ms */
 
-/* ---- 系统节拍 (在 display.c Timer1 ISR 中置位) ---- */
-extern volatile unsigned char g_tick;
-
 void Display_Init(void);
+void Display_Start(void);
 
 #endif

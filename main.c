@@ -1,11 +1,12 @@
 #include "config.h"
+#include "freq.h"
+#include "tick.h"
 #include "spwm.h"
 #include "display.h"
 #include "key.h"
 
 /*
- * 基于 ST89C52 的 1Hz~20Hz 可调 SPWM 波形发生器
- 主控制.
+ * 基于 ST89C52 的 1Hz~20Hz 可调 SPWM 波形发生器 — 主控制
  *
  * 功能:
  *   - P3.7 输出 SPWM 波形 (查表法 + Timer0 中断)
@@ -16,9 +17,6 @@
  * 晶振: 11.0592MHz
  */
 
-/* ---- 全局变量 ---- */
-volatile unsigned char g_frequency = 1;  /* 当前输出频率, 初始 1Hz */
-
 void main(void)
 {
     KeyEvent evt;
@@ -27,21 +25,20 @@ void main(void)
     Display_Init();
     Key_Init();
 
-    EA = 1;     /* 所有外设初始化完成后再开全局中断 */
+    EA = 1;     /* 开全局中断 */
+
+    SPWM_Start();       /* Timer0 启动, ISR 开始输出波形 */
+    Display_Start();    /* Timer1 启动, ISR 开始扫描数码管 */
 
     while (1) {
-        if (g_tick) {
-            g_tick = 0;
+        if (Tick_Get()) {
+            Tick_Clear();
 
             evt = Key_Scan();
             if (evt == KEY_UP) {
-                if (g_frequency < FREQ_MAX) {
-                    g_frequency++;
-                }
+                Freq_Inc();
             } else if (evt == KEY_DOWN) {
-                if (g_frequency > FREQ_MIN) {
-                    g_frequency--;
-                }
+                Freq_Dec();
             }
         } else {
             PCON |= 0x01;   /* IDLE 模式, 任何中断自动唤醒 */

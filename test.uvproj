@@ -401,6 +401,16 @@
               <FileType>1</FileType>
               <FilePath>.\key.c</FilePath>
             </File>
+            <File>
+              <FileName>freq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\freq.c</FilePath>
+            </File>
+            <File>
+              <FileName>tick.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\tick.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

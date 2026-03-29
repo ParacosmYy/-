@@ -1,4 +1,5 @@
 #include "spwm.h"
+#include "freq.h"
 
 /*
  * SPWM 核心模块
@@ -71,7 +72,7 @@ void Timer0_ISR(void) interrupt 1 using 1
 
     /* 不立即停定时器, 让它在计算期间继续计数, 便于补偿 */
 
-    idx = g_frequency - 1;
+    idx = Freq_Get() - 1;
     q = tick_q[idx];
     r = tick_r[idx];
 
@@ -96,7 +97,8 @@ void Timer0_ISR(void) interrupt 1 using 1
     }
 
     /* 16 位运算: q*d 最大 92*99=9108, r*d 最大 76*99=7524 */
-    ticks = (unsigned int)q * d + (unsigned int)(r * d) / PWM_LEVELS;
+    ticks = (unsigned int)q * d
+          + ((unsigned int)r * d) / PWM_LEVELS;
 
     if (ticks < MIN_PHASE_TICKS) {
         ticks = MIN_PHASE_TICKS;
@@ -141,6 +143,11 @@ void SPWM_Init(void)
     /* Timer0 高优先级, 可抢占 Timer1, 保证波形精度 */
     ET0 = 1;
     PT0 = 1;
+}
+
+/* ---- 启动输出 (EA=1 后调用) ---- */
+void SPWM_Start(void)
+{
     TR0 = 1;
 }
 

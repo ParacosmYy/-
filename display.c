@@ -1,11 +1,13 @@
 #include "display.h"
+#include "freq.h"
+#include "tick.h"
 
 /*
  * 数码管显示模块 — Timer1 中断驱动
  *
  * Timer1 Mode 2 (8位自动重装), 重装值 0 → 溢出周期 256 × 1.085us ≈ 278us.
  * 软件分频 DISP_TIMER_DIV = 7 → 显示扫描周期 ≈ 1.94ms ≈ 2ms.
- * 每次扫描切换一位数码管, 同时置 g_tick 供主循环使用.
+ * 每次扫描切换一位数码管, 同时通过 Tick_Notify() 通知主循环.
  *
  * 功能: 频率 1~9 时十位消隐, 10~20 正常显示.
  */
@@ -27,13 +29,11 @@ const unsigned char code seg_table[10] = {
 /* ---- 扫描状态 ---- */
 static unsigned char scan_flag;     /* 0=显示十位, 1=显示个位 */
 
-/* ---- 2ms 系统节拍 ---- */
-volatile unsigned char g_tick = 0;
-
 /* ---- Timer1 中断: 显示扫描 + 系统节拍 ---- */
 void Timer1_ISR(void) interrupt 3 using 2
 {
     static unsigned char div;
+    unsigned char freq;
 
     if (++div >= DISP_TIMER_DIV) {
         div = 0;
@@ -42,10 +42,12 @@ void Timer1_ISR(void) interrupt 3 using 2
         DIG_TENS = 1;
         DIG_ONES = 1;
 
+        freq = Freq_Get();
+
         if (scan_flag == 0) {
             /* ---- 显示十位 (频率 < 10 时消隐) ---- */
-            if (g_frequency >= 10) {
-                SEG_PORT = seg_table[g_frequency / 10];
+            if (freq >= 10) {
+                SEG_PORT = seg_table[freq / 10];
             } else {
                 SEG_PORT = 0xFF;    /* 消隐: 全部段灭 */
             }
@@ -53,12 +55,12 @@ void Timer1_ISR(void) interrupt 3 using 2
             scan_flag = 1;
         } else {
             /* ---- 显示个位 ---- */
-            SEG_PORT = seg_table[g_frequency % 10];
+            SEG_PORT = seg_table[freq % 10];
             DIG_ONES = 0;
             scan_flag = 0;
         }
 
-        g_tick = 1;    /* 通知主循环 */
+        Tick_Notify();  /* 通知主循环 */
     }
 }
 
@@ -76,5 +78,10 @@ void Display_Init(void)
     TL1 = 0;
 
     ET1 = 1;    /* 允许 Timer1 中断 */
-    TR1 = 1;    /* 启动 Timer1 */
+}
+
+/* ---- 启动扫描 (EA=1 后调用) ---- */
+void Display_Start(void)
+{
+    TR1 = 1;
 }

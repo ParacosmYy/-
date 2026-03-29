@@ -17,82 +17,63 @@
 #define STATE_HELD      1       /* 保持: 等待长按阈值 */
 #define STATE_REPEAT    2       /* 重复: 持续触发 */
 
-static unsigned char k1_state;
-static unsigned char k1_count;
-static unsigned char k2_state;
-static unsigned char k2_count;
+/* ---- 单键状态上下文 ---- */
+typedef struct {
+    unsigned char state;
+    unsigned char count;
+} KeyCtx;
+
+static KeyCtx k1;
+static KeyCtx k2;
 
 /* ---- 初始化 ---- */
 void Key_Init(void)
 {
-    k1_state = STATE_IDLE;
-    k1_count = 0;
-    k2_state = STATE_IDLE;
-    k2_count = 0;
+    k1.state = STATE_IDLE; k1.count = 0;
+    k2.state = STATE_IDLE; k2.count = 0;
+}
+
+/* ---- 单键状态机 (内部) ---- */
+static KeyEvent key_process(KeyCtx *ctx, unsigned char pressed, KeyEvent evt)
+{
+    if (pressed) {
+        ctx->count++;
+        switch (ctx->state) {
+        case STATE_IDLE:
+            if (ctx->count >= KEY_DEBOUNCE_COUNT) {
+                ctx->state = STATE_HELD;
+                ctx->count = 0;
+                return evt;
+            }
+            break;
+        case STATE_HELD:
+            if (ctx->count >= KEY_HOLD_START) {
+                ctx->state = STATE_REPEAT;
+                ctx->count = 0;
+                return evt;
+            }
+            break;
+        case STATE_REPEAT:
+            if (ctx->count >= KEY_REPEAT_INTERVAL) {
+                ctx->count = 0;
+                return evt;
+            }
+            break;
+        }
+    } else {
+        ctx->state = STATE_IDLE;
+        ctx->count = 0;
+    }
+    return KEY_NONE;
 }
 
 /* ---- 按键扫描 (主循环中调用, 非阻塞) ---- */
 KeyEvent Key_Scan(void)
 {
-    /* ---- K1: 频率增加 ---- */
-    if (KEY_FREQ_UP == 0) {
-        k1_count++;
-        switch (k1_state) {
-        case STATE_IDLE:
-            if (k1_count >= KEY_DEBOUNCE_COUNT) {
-                k1_state = STATE_HELD;
-                k1_count = 0;
-                return KEY_UP;
-            }
-            break;
-        case STATE_HELD:
-            if (k1_count >= KEY_HOLD_START) {
-                k1_state = STATE_REPEAT;
-                k1_count = 0;
-                return KEY_UP;
-            }
-            break;
-        case STATE_REPEAT:
-            if (k1_count >= KEY_REPEAT_INTERVAL) {
-                k1_count = 0;
-                return KEY_UP;
-            }
-            break;
-        }
-    } else {
-        k1_state = STATE_IDLE;
-        k1_count = 0;
-    }
+    KeyEvent evt;
 
-    /* ---- K2: 频率减少 ---- */
-    if (KEY_FREQ_DOWN == 0) {
-        k2_count++;
-        switch (k2_state) {
-        case STATE_IDLE:
-            if (k2_count >= KEY_DEBOUNCE_COUNT) {
-                k2_state = STATE_HELD;
-                k2_count = 0;
-                return KEY_DOWN;
-            }
-            break;
-        case STATE_HELD:
-            if (k2_count >= KEY_HOLD_START) {
-                k2_state = STATE_REPEAT;
-                k2_count = 0;
-                return KEY_DOWN;
-            }
-            break;
-        case STATE_REPEAT:
-            if (k2_count >= KEY_REPEAT_INTERVAL) {
-                k2_count = 0;
-                return KEY_DOWN;
-            }
-            break;
-        }
-    } else {
-        k2_state = STATE_IDLE;
-        k2_count = 0;
-    }
+    evt = key_process(&k1, KEY_FREQ_UP == 0, KEY_UP);
+    if (evt != KEY_NONE) return evt;
 
-    return KEY_NONE;
+    return key_process(&k2, KEY_FREQ_DOWN == 0, KEY_DOWN);
 }
