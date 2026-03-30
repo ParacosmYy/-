@@ -13,6 +13,6 @@ void SPWM_Start(void);
 
 /* ---- SPWM 算法参数 ---- */
 #define SINE_POINTS     100             /* 每周期采样点数 */
-#define PWM_LEVELS      100             /* PWM 分辨率 (0~99) */
+#define PWM_LEVELS      256             /* PWM 分辨率 (0~255), 2^n 使 ISR 除法变移位 */
 #define MIN_PHASE_TICKS 100             /* 最小相位钳位 (机器周期), 防 ISR 抵溢出 */
 #endif
