@@ -4,16 +4,19 @@
 #include "config.h"
 
 /*
- * 两位共阳七段数码管显示模块
- * Timer1 Mode 2 中断驱动动态扫描, 非阻塞.
- * P1 段选, P2.0/P2.1 位选.
+ * Dual 7-segment display driver.
+ *
+ * Timer1 only provides the system tick.
+ * The foreground calls Display_Task() periodically to multiplex one digit
+ * per invocation. The module owns the display cache so upper layers only
+ * provide the value to be shown.
  */
 
-/* ---- 显示扫描参数 ---- */
-#define DISP_TIMER_DIV  7               /* Timer1 分频: 7 × 278us ≈ 1.94ms ≈ 2ms */
+#define DISP_TIMER_DIV  7U
 
 void Display_Init(void);
 void Display_Start(void);
-void Display_Scan(void);                /* 主循环扫描数码管 */
+void Display_SetValue(unsigned char value);
+void Display_Task(void);
 
 #endif

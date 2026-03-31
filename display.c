@@ -1,88 +1,119 @@
 #include "display.h"
-#include "freq.h"
 #include "tick.h"
 
 /*
- * 数码管显示模块 — Timer1 中断驱动
+ * Display driver for a dual common-anode 7-segment module.
  *
- * Timer1 Mode 2 (8位自动重装), 重装值 0 → 溢出周期 256 × 1.085us ≈ 278us.
- * 软件分频 DISP_TIMER_DIV = 7 → 显示扫描周期 ≈ 1.94ms ≈ 2ms.
- * 每次扫描切换一位数码管, 同时通过 Tick_Notify() 通知主循环.
- *
- * 功能: 频率 1~9 时十位消隐, 10~20 正常显示.
+ * Segment lines are shared on P1 and digit enables are on P2.0/P2.1.
+ * Foreground scheduling keeps scan timing deterministic without placing
+ * display work inside the interrupt service routine.
  */
 
-/* ---- 共阳七段码查找表 (0~9) ---- */
-const unsigned char code seg_table[10] = {
-    0xC0,  /* 0 */
-    0xF9,  /* 1 */
-    0xA4,  /* 2 */
-    0xB0,  /* 3 */
-    0x99,  /* 4 */
-    0x92,  /* 5 */
-    0x82,  /* 6 */
-    0xF8,  /* 7 */
-    0x80,  /* 8 */
-    0x90   /* 9 */
+#define DISPLAY_DIGIT_COUNT  2U
+#define DISPLAY_BLANK_CODE   0xFFU
+#define DISPLAY_TENS_INDEX   0U
+#define DISPLAY_ONES_INDEX   1U
+
+static const unsigned char code kSegCode[10] = {
+    0xC0, 0xF9, 0xA4, 0xB0, 0x99,
+    0x92, 0x82, 0xF8, 0x80, 0x90
 };
 
-/* ---- 扫描状态 ---- */
-static unsigned char scan_flag;     /* 0=显示十位, 1=显示个位 */
+typedef struct {
+    unsigned char value;
+    unsigned char digits[DISPLAY_DIGIT_COUNT];
+    unsigned char scan_index;
+} DisplayContext;
 
-/* ---- 主循环扫描函数: 每个系统节拍只切换一位 ---- */
-void Display_Scan(void)
+static DisplayContext s_display;
+
+static void Display_AllOff(void)
 {
-    unsigned char freq;
-
-    freq = Freq_Get();
-
-    /* 先关位选, 再切段码, 最后开目标位, 避免串位/鬼影 */
     DIG_TENS = 1;
     DIG_ONES = 1;
+}
 
-    if (scan_flag == 0) {
-        if (freq >= 10) {
-            SEG_PORT = seg_table[freq / 10];
-        } else {
-            SEG_PORT = 0xFF;
-        }
-        DIG_TENS = 0;
-        scan_flag = 1;
+static void Display_UpdateDigits(unsigned char value)
+{
+    s_display.value = value;
+
+    if (value >= 10U) {
+        s_display.digits[DISPLAY_TENS_INDEX] = value / 10U;
     } else {
-        SEG_PORT = seg_table[freq % 10];
+        s_display.digits[DISPLAY_TENS_INDEX] = DISPLAY_BLANK_CODE;
+    }
+
+    s_display.digits[DISPLAY_ONES_INDEX] = value % 10U;
+}
+
+static void Display_OutputDigit(unsigned char index)
+{
+    unsigned char digit;
+
+    digit = s_display.digits[index];
+
+    Display_AllOff();
+
+    if (digit <= 9U) {
+        SEG_PORT = kSegCode[digit];
+    } else {
+        SEG_PORT = DISPLAY_BLANK_CODE;
+    }
+
+    if (index == DISPLAY_TENS_INDEX) {
+        DIG_TENS = 0;
+    } else {
         DIG_ONES = 0;
-        scan_flag = 0;
     }
 }
 
-/* ---- Timer1 中断: 仅提供系统节拍 ---- */
+void Display_SetValue(unsigned char value)
+{
+    if (value < FREQ_MIN) {
+        value = FREQ_MIN;
+    } else if (value > FREQ_MAX) {
+        value = FREQ_MAX;
+    }
+
+    Display_UpdateDigits(value);
+}
+
+void Display_Task(void)
+{
+    Display_OutputDigit(s_display.scan_index);
+
+    s_display.scan_index++;
+    if (s_display.scan_index >= DISPLAY_DIGIT_COUNT) {
+        s_display.scan_index = 0;
+    }
+}
+
 void Timer1_ISR(void) interrupt 3 using 2
 {
     static unsigned char div;
 
-    if (++div >= DISP_TIMER_DIV) {
+    div++;
+    if (div >= DISP_TIMER_DIV) {
         div = 0;
-        Tick_Notify();  /* 通知主循环 */
+        Tick_Notify();
     }
 }
 
-/* ---- 初始化 ---- */
 void Display_Init(void)
 {
-    scan_flag = 0;
-    SEG_PORT = 0xFF;    /* 全部熄灭 (共阳, 高电平灭) */
-    DIG_TENS = 1;       /* 十位未选中 */
-    DIG_ONES = 1;       /* 个位未选中 */
+    SEG_PORT = DISPLAY_BLANK_CODE;
+    Display_AllOff();
 
-    /* Timer1, Mode 2 (8位自动重装), 与 Timer0 Mode 1 共存 */
-    TMOD = (TMOD & 0x0F) | 0x20;   /* 保留 Timer0 设置, Timer1 = Mode 2 */
-    TH1 = 0;                        /* 重装值 0 → 周期 278us */
+    s_display.scan_index = 0;
+    Display_UpdateDigits(FREQ_MIN);
+
+    TMOD = (TMOD & 0x0F) | 0x20;
+    TH1 = 0;
     TL1 = 0;
 
-    ET1 = 1;    /* 允许 Timer1 中断, 仅提供系统节拍 */
+    ET1 = 1;
 }
 
-/* ---- 启动扫描 (EA=1 后调用) ---- */
 void Display_Start(void)
 {
     TR1 = 1;

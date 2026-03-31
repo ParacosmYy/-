@@ -1,50 +1,59 @@
 #include "config.h"
-#include "freq.h"
-#include "tick.h"
-#include "spwm.h"
 #include "display.h"
+#include "freq.h"
 #include "key.h"
+#include "spwm.h"
+#include "tick.h"
 
 /*
- * 基于 ST89C52 的 1Hz~20Hz 可调 SPWM 波形发生器 — 主控制
+ * Main foreground/background control flow.
  *
- * 功能:
- *   - P3.7 输出 SPWM 波形 (查表法 + Timer0 中断)
- *   - K1(P3.3) 频率+, K2(P3.2) 频率- (支持长按连加/连减)
- *   - 两位共阳数码管实时显示频率 (Timer1 中断驱动扫描)
- *   - 频率 1~9 时十位自动消隐, 10~20 正常显示
- *
- * 晶振: 11.0592MHz
+ * Interrupts generate timing and waveform output.
+ * The foreground loop executes periodic application tasks on the 2 ms tick.
  */
+
+#define APP_TICK_PERIOD_MS        2U
+#define APP_KEY_SCAN_PERIOD_MS    20U
+#define APP_KEY_SCAN_DIV          (APP_KEY_SCAN_PERIOD_MS / APP_TICK_PERIOD_MS)
+
+static void App_HandleKeyEvent(KeyEvent evt)
+{
+    if (evt == KEY_UP) {
+        Freq_Inc();
+    } else if (evt == KEY_DOWN) {
+        Freq_Dec();
+    }
+}
+
+static void App_Task2ms(void)
+{
+    static unsigned char key_scan_div;
+
+    Display_SetValue(Freq_Get());
+    Display_Task();
+
+    key_scan_div++;
+    if (key_scan_div >= APP_KEY_SCAN_DIV) {
+        key_scan_div = 0;
+        App_HandleKeyEvent(Key_Scan());
+    }
+}
 
 void main(void)
 {
-    KeyEvent evt;
-    unsigned char key_div = 0;
-
     SPWM_Init();
     Display_Init();
     Key_Init();
 
-    EA = 1;     /* 开全局中断 */
+    EA = 1;
 
-    SPWM_Start();       /* Timer0 启动, ISR 开始输出波形 */
-    Display_Start();    /* Timer1 启动, ISR 开始扫描数码管 */
+    SPWM_Start();
+    Display_Start();
 
     while (1) {
-        if (Tick_Get()) {
+        if (Tick_Get() != 0U) {
             Tick_Clear();
-            Display_Scan();
-
-            if (++key_div >= 10) {
-                key_div = 0;
-                evt = Key_Scan();
-                if (evt == KEY_UP) {
-                    Freq_Inc();
-                } else if (evt == KEY_DOWN) {
-                    Freq_Dec();
-                }
-            }
+            App_Task2ms();
         }
     }
 }
