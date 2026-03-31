@@ -14,12 +14,12 @@
 typedef struct {
     unsigned char state;
     unsigned char count;
-} KeyContext;
+} key_ctx_t;
 
-static KeyContext s_key_up;
-static KeyContext s_key_down;
+static key_ctx_t s_key_up_ctx;
+static key_ctx_t s_key_down_ctx;
 
-static KeyEvent Key_Process(KeyContext *ctx, unsigned char pressed, KeyEvent evt)
+static KeyEvent key_process(key_ctx_t *ctx, unsigned char pressed, KeyEvent evt)
 {
     if (pressed != 0U) {
         ctx->count++;
@@ -61,22 +61,22 @@ static KeyEvent Key_Process(KeyContext *ctx, unsigned char pressed, KeyEvent evt
     return KEY_NONE;
 }
 
-void Key_Init(void)
+void key_init(void)
 {
-    s_key_up.state = KEY_STATE_IDLE;
-    s_key_up.count = 0U;
-    s_key_down.state = KEY_STATE_IDLE;
-    s_key_down.count = 0U;
+    s_key_up_ctx.state = KEY_STATE_IDLE;
+    s_key_up_ctx.count = 0U;
+    s_key_down_ctx.state = KEY_STATE_IDLE;
+    s_key_down_ctx.count = 0U;
 }
 
-KeyEvent Key_Scan(void)
+KeyEvent key_scan(void)
 {
     KeyEvent evt;
 
-    evt = Key_Process(&s_key_up, (KEY_FREQ_UP == 0U), KEY_UP);
+    evt = key_process(&s_key_up_ctx, (KEY_FREQ_UP == 0U), KEY_UP);
     if (evt != KEY_NONE) {
         return evt;
     }
 
-    return Key_Process(&s_key_down, (KEY_FREQ_DOWN == 0U), KEY_DOWN);
+    return key_process(&s_key_down_ctx, (KEY_FREQ_DOWN == 0U), KEY_DOWN);
 }

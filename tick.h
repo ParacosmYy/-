@@ -4,17 +4,17 @@
 /*
  * 系统节拍模块。
  *
- * 中断中调用 Tick_Notify() 置位节拍标志，
- * 前台通过 Tick_Get() 查询并使用 Tick_Clear() 清除。
+ * 中断中调用 tick_notify() 置位节拍标志，
+ * 前台通过 tick_get() 查询并使用 tick_clear() 清除。
  */
 
 /* 中断中置位节拍标志 */
-void Tick_Notify(void);
+void tick_notify(void);
 
 /* 读取当前节拍标志 */
-unsigned char Tick_Get(void);
+unsigned char tick_get(void);
 
 /* 清除节拍标志 */
-void Tick_Clear(void);
+void tick_clear(void);
 
 #endif

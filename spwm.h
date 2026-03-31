@@ -20,9 +20,9 @@
 #define MIN_PHASE_TICKS 100U
 
 /* 初始化 SPWM 模块 */
-void SPWM_Init(void);
+void spwm_init(void);
 
 /* 启动 SPWM 输出 */
-void SPWM_Start(void);
+void spwm_start(void);
 
 #endif

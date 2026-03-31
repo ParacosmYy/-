@@ -9,12 +9,12 @@
 
 static volatile unsigned char s_frequency = FREQ_MIN;
 
-unsigned char Freq_Get(void)
+unsigned char freq_get(void)
 {
     return s_frequency;
 }
 
-void Freq_Inc(void)
+void freq_increase(void)
 {
     unsigned char ea;
 
@@ -28,7 +28,7 @@ void Freq_Inc(void)
     EA = ea;
 }
 
-void Freq_Dec(void)
+void freq_decrease(void)
 {
     unsigned char ea;
 

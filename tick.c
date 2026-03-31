@@ -8,17 +8,17 @@
 
 static volatile unsigned char s_tick = 0U;
 
-void Tick_Notify(void)
+void tick_notify(void)
 {
     s_tick = 1U;
 }
 
-unsigned char Tick_Get(void)
+unsigned char tick_get(void)
 {
     return s_tick;
 }
 
-void Tick_Clear(void)
+void tick_clear(void)
 {
     s_tick = 0U;
 }

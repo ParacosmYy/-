@@ -16,16 +16,16 @@
 #define APP_KEY_SCAN_DIV          (APP_KEY_SCAN_PERIOD_MS / APP_TICK_PERIOD_MS)
 #define APP_TIMER1_DIV            7U
 
-static void App_HandleKeyEvent(KeyEvent evt)
+static void app_handle_key_event(KeyEvent evt)
 {
     if (evt == KEY_UP) {
-        Freq_Inc();
+        freq_increase();
     } else if (evt == KEY_DOWN) {
-        Freq_Dec();
+        freq_decrease();
     }
 }
 
-static void App_Timer1Init(void)
+static void app_timer1_init(void)
 {
     TMOD = (TMOD & 0x0F) | 0x20;
     TH1 = 0;
@@ -34,38 +34,38 @@ static void App_Timer1Init(void)
     ET1 = 1;
 }
 
-static void App_KeyTask(void)
+static void app_key_task(void)
 {
     static unsigned char key_scan_div;
 
     key_scan_div++;
     if (key_scan_div >= APP_KEY_SCAN_DIV) {
         key_scan_div = 0U;
-        App_HandleKeyEvent(Key_Scan());
+        app_handle_key_event(key_scan());
     }
 }
 
-void App_Init(void)
+void app_init(void)
 {
-    Display_Init();
-    Key_Init();
-    App_Timer1Init();
+    display_init();
+    key_init();
+    app_timer1_init();
 }
 
-void App_Start(void)
+void app_start(void)
 {
-    Display_SetValue(Freq_Get());
+    display_set_value(freq_get());
     TR1 = 1;
 }
 
-void App_Task(void)
+void app_task(void)
 {
-    Display_Task();
+    display_task();
 
-    if (Tick_Get() != 0U) {
-        Tick_Clear();
-        App_KeyTask();
-        Display_SetValue(Freq_Get());
+    if (tick_get() != 0U) {
+        tick_clear();
+        app_key_task();
+        display_set_value(freq_get());
     }
 }
 
@@ -76,6 +76,6 @@ void Timer1_ISR(void) interrupt 3 using 2
     tick_div++;
     if (tick_div >= APP_TIMER1_DIV) {
         tick_div = 0U;
-        Tick_Notify();
+        tick_notify();
     }
 }

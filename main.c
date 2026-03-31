@@ -11,15 +11,15 @@
 
 void main(void)
 {
-    SPWM_Init();
-    App_Init();
+    spwm_init();
+    app_init();
 
     EA = 1;
 
-    SPWM_Start();
-    App_Start();
+    spwm_start();
+    app_start();
 
     while (1) {
-        App_Task();
+        app_task();
     }
 }

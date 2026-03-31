@@ -10,12 +10,12 @@
  */
 
 /* 初始化应用层相关模块 */
-void App_Init(void);
+void app_init(void);
 
 /* 启动应用层运行 */
-void App_Start(void);
+void app_start(void);
 
 /* 主循环中持续调用的应用任务入口 */
-void App_Task(void);
+void app_task(void);
 
 #endif

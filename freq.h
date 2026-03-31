@@ -11,12 +11,12 @@
  */
 
 /* 获取当前频率值 */
-unsigned char Freq_Get(void);
+unsigned char freq_get(void);
 
 /* 频率加 1，达到上限后保持不变 */
-void Freq_Inc(void);
+void freq_increase(void);
 
 /* 频率减 1，达到下限后保持不变 */
-void Freq_Dec(void);
+void freq_decrease(void);
 
 #endif

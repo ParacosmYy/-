@@ -11,12 +11,12 @@
  */
 
 /* 初始化数码管显示模块 */
-void Display_Init(void);
+void display_init(void);
 
 /* 设置待显示的频率值 */
-void Display_SetValue(unsigned char value);
+void display_set_value(unsigned char value);
 
 /* 执行一次显示扫描任务，每次仅刷新一位 */
-void Display_Task(void);
+void display_task(void);
 
 #endif

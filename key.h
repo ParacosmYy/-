@@ -23,9 +23,9 @@ typedef enum {
 } KeyEvent;
 
 /* 初始化按键状态机 */
-void Key_Init(void);
+void key_init(void);
 
 /* 扫描按键并返回事件 */
-KeyEvent Key_Scan(void);
+KeyEvent key_scan(void);
 
 #endif
