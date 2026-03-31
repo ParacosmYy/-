@@ -1,4 +1,4 @@
-#include "key.h"
+﻿#include "key.h"
 
 /*
  * 按键扫描模块实现。

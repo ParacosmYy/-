@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_proj.xsd">
 
   <SchemaVersion>1.1</SchemaVersion>
@@ -34,7 +34,7 @@
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
-          <IncludePath></IncludePath>
+          <IncludePath>.\Core;.\Application;.\Modules;.\Drivers</IncludePath>
           <LibPath></LibPath>
           <RegisterFilePath>Atmel\</RegisterFilePath>
           <DBRegisterFilePath>Atmel\</DBRegisterFilePath>
@@ -324,7 +324,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <IncludePath>.\Core;.\Application;.\Modules;.\Drivers</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <IncludePath>.\Core;.\Application;.\Modules;.\Drivers</IncludePath>
             </VariousControls>
           </Ax51>
           <Lx51>
@@ -374,47 +374,112 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>Source Group 1</GroupName>
+          <GroupName>Core</GroupName>
           <Files>
             <File>
               <FileName>STARTUP.A51</FileName>
               <FileType>2</FileType>
-              <FilePath>.\STARTUP.A51</FilePath>
+              <FilePath>.\Core\STARTUP.A51</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\main.c</FilePath>
+              <FilePath>.\Core\main.c</FilePath>
             </File>
+            <File>
+              <FileName>config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Core\config.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application</GroupName>
+          <Files>
             <File>
               <FileName>app.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\app.c</FilePath>
+              <FilePath>.\Application\app.c</FilePath>
             </File>
+            <File>
+              <FileName>app.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Application\app.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Modules</GroupName>
+          <Files>
             <File>
               <FileName>spwm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\spwm.c</FilePath>
+              <FilePath>.\Modules\spwm.c</FilePath>
             </File>
             <File>
-              <FileName>display.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\display.c</FilePath>
-            </File>
-            <File>
-              <FileName>key.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\key.c</FilePath>
+              <FileName>spwm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Modules\spwm.h</FilePath>
             </File>
             <File>
               <FileName>freq.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\freq.c</FilePath>
+              <FilePath>.\Modules\freq.c</FilePath>
+            </File>
+            <File>
+              <FileName>freq.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Modules\freq.h</FilePath>
             </File>
             <File>
               <FileName>tick.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\tick.c</FilePath>
+              <FilePath>.\Modules\tick.c</FilePath>
+            </File>
+            <File>
+              <FileName>tick.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Modules\tick.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Drivers</GroupName>
+          <Files>
+            <File>
+              <FileName>display.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Drivers\display.c</FilePath>
+            </File>
+            <File>
+              <FileName>display.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Drivers\display.h</FilePath>
+            </File>
+            <File>
+              <FileName>key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Drivers\key.c</FilePath>
+            </File>
+            <File>
+              <FileName>key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Drivers\key.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Documents</GroupName>
+          <Files>
+            <File>
+              <FileName>README.md</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Documents\README.md</FilePath>
+            </File>
+            <File>
+              <FileName>预习报告.md</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Documents\预习报告.md</FilePath>
             </File>
           </Files>
         </Group>
@@ -423,3 +488,4 @@
   </Targets>
 
 </Project>
+
