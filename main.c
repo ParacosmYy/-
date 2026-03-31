@@ -41,5 +41,7 @@ void main(void)
                 Freq_Dec();
             }
         }
+
+        Display_Scan();  /* 主循环扫描数码管, 避免中断冲突 */
     }
 }

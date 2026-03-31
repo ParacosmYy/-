@@ -14,5 +14,6 @@
 
 void Display_Init(void);
 void Display_Start(void);
+void Display_Scan(void);                /* 主循环扫描数码管 */
 
 #endif

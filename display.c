@@ -29,37 +29,41 @@ const unsigned char code seg_table[10] = {
 /* ---- 扫描状态 ---- */
 static unsigned char scan_flag;     /* 0=显示十位, 1=显示个位 */
 
-/* ---- Timer1 中断: 显示扫描 + 系统节拍 ---- */
+/* ---- 主循环扫描函数 ---- */
+void Display_Scan(void)
+{
+    unsigned char freq;
+
+    /* 先熄灭, 消鬼影 */
+    DIG_TENS = 1;
+    DIG_ONES = 1;
+
+    freq = Freq_Get();
+
+    if (scan_flag == 0) {
+        /* ---- 显示十位 (频率 < 10 时消隐) ---- */
+        if (freq >= 10) {
+            SEG_PORT = seg_table[freq / 10];
+        } else {
+            SEG_PORT = 0xFF;    /* 消隐: 全部段灭 */
+        }
+        DIG_TENS = 0;
+        scan_flag = 1;
+    } else {
+        /* ---- 显示个位 ---- */
+        SEG_PORT = seg_table[freq % 10];
+        DIG_ONES = 0;
+        scan_flag = 0;
+    }
+}
+
+/* ---- Timer1 中断: 仅提供系统节拍 ---- */
 void Timer1_ISR(void) interrupt 3 using 2
 {
     static unsigned char div;
-    unsigned char freq;
 
     if (++div >= DISP_TIMER_DIV) {
         div = 0;
-
-        /* 先熄灭, 消鬼影 */
-        DIG_TENS = 1;
-        DIG_ONES = 1;
-
-        freq = Freq_Get();
-
-        if (scan_flag == 0) {
-            /* ---- 显示十位 (频率 < 10 时消隐) ---- */
-            if (freq >= 10) {
-                SEG_PORT = seg_table[freq / 10];
-            } else {
-                SEG_PORT = 0xFF;    /* 消隐: 全部段灭 */
-            }
-            DIG_TENS = 0;
-            scan_flag = 1;
-        } else {
-            /* ---- 显示个位 ---- */
-            SEG_PORT = seg_table[freq % 10];
-            DIG_ONES = 0;
-            scan_flag = 0;
-        }
-
         Tick_Notify();  /* 通知主循环 */
     }
 }
@@ -77,8 +81,7 @@ void Display_Init(void)
     TH1 = 0;                        /* 重装值 0 → 周期 278us */
     TL1 = 0;
 
-    ET1 = 1;    /* 允许 Timer1 中断 */
-    PT1 = 1;    /* Timer1 高优先级, 与 Timer0 同级公平竞争 */
+    ET1 = 1;    /* 允许 Timer1 中断, 仅提供系统节拍 */
 }
 
 /* ---- 启动扫描 (EA=1 后调用) ---- */
