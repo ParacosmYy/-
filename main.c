@@ -40,8 +40,6 @@ void main(void)
             } else if (evt == KEY_DOWN) {
                 Freq_Dec();
             }
-        } else {
-            PCON |= 0x01;   /* IDLE 模式, 任何中断自动唤醒 */
         }
     }
 }
