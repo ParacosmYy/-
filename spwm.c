@@ -140,9 +140,9 @@ void SPWM_Init(void)
         TL0 = (unsigned char)(init_reload & 0xFF);
     }
 
-    /* Timer0 高优先级, 可抢占 Timer1, 保证波形精度 */
+    /* Timer0 默认优先级, 与 Timer1 同级, 避免抢占导致数码管无法显示 */
     ET0 = 1;
-    PT0 = 1;
+    /* PT0 = 1; */
 }
 
 /* ---- 启动输出 (EA=1 后调用) ---- */
