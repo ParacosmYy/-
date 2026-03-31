@@ -5,10 +5,10 @@
 #include "tick.h"
 
 /*
- * 应用层实现。
+ * Application layer.
  *
- * Timer1 仅用于产生按键扫描节拍。
- * 数码管刷新始终在主循环中完成，不由中断驱动。
+ * Timer1 only provides the key-scan tick.
+ * Display refresh stays in the main loop.
  */
 
 #define APP_TICK_PERIOD_MS        2U
@@ -20,8 +20,10 @@ static void app_handle_key_event(KeyEvent evt)
 {
     if (evt == KEY_UP) {
         freq_increase();
+        display_set_value(freq_get());
     } else if (evt == KEY_DOWN) {
         freq_decrease();
+        display_set_value(freq_get());
     }
 }
 
@@ -60,13 +62,13 @@ void app_start(void)
 
 void app_task(void)
 {
-    display_task();
-
     if (tick_get() != 0U) {
+        display_blank();
         tick_clear();
         app_key_task();
-        display_set_value(freq_get());
     }
+
+    display_task();
 }
 
 void Timer1_ISR(void) interrupt 3 using 2

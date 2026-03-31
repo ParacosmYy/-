@@ -2,13 +2,13 @@
 #include "freq.h"
 
 /*
- * SPWM 输出模块实现。
+ * SPWM output module.
  *
- * 使用查表法生成正弦包络占空比，并通过 Timer0 双相中断输出 SPWM。
- * 为降低 8051 中断计算开销，频率相关定时参数采用 q/r 分解表预计算。
+ * Timer0 uses a sine lookup table and dual-phase timing to generate SPWM.
+ * Frequency timing parameters are precomputed as q/r tables for ISR speed.
  */
 
-/* 正弦查找表，范围 0~255 */
+/* Sine lookup table, range 0..255. */
 const unsigned char code spwm_sine_table[SINE_POINTS] = {
    128, 136, 143, 151, 159, 167, 174, 182, 189, 196,
    202, 209, 215, 220, 226, 231, 235, 239, 243, 246,
@@ -23,11 +23,10 @@ const unsigned char code spwm_sine_table[SINE_POINTS] = {
 };
 
 /*
- * 采样周期满足：
+ * Sample period:
  * T_sample = FOSC / 12 / (SINE_POINTS * freq)
  *
- * 为避免中断中进行 32 位乘除法，预先将采样周期拆分为：
- * sample_ticks = tick_q * 256 + tick_r
+ * The q/r split avoids 32-bit division inside the ISR.
  */
 const unsigned char code spwm_tick_q[FREQ_MAX] = {
     36, 18, 12,  9,  7,  6,  5,  4,  4,  3,
@@ -42,27 +41,28 @@ const unsigned char code spwm_tick_r[FREQ_MAX] = {
 static unsigned char s_spwm_table_index;
 static unsigned char s_spwm_phase;
 static unsigned char s_spwm_current_duty;
+static unsigned char s_cached_freq_idx;
 
 void Timer0_ISR(void) interrupt 1 using 1
 {
     unsigned int ticks;
     unsigned int reload;
     unsigned int elapsed;
-    unsigned char idx;
     unsigned char q;
     unsigned char r;
     unsigned char duty;
 
-    idx = freq_get() - 1U;
-    q = spwm_tick_q[idx];
-    r = spwm_tick_r[idx];
-
     if (s_spwm_phase == 0U) {
+        s_cached_freq_idx = freq_get() - 1U;
+        q = spwm_tick_q[s_cached_freq_idx];
+        r = spwm_tick_r[s_cached_freq_idx];
         SPWM_PIN = 0;
         s_spwm_current_duty = spwm_sine_table[s_spwm_table_index];
         duty = PWM_LEVELS - s_spwm_current_duty;
         s_spwm_phase = 1U;
     } else {
+        q = spwm_tick_q[s_cached_freq_idx];
+        r = spwm_tick_r[s_cached_freq_idx];
         SPWM_PIN = 1;
         duty = s_spwm_current_duty;
 
@@ -102,6 +102,7 @@ void spwm_init(void)
     s_spwm_table_index = 0U;
     s_spwm_phase = 0U;
     s_spwm_current_duty = spwm_sine_table[0];
+    s_cached_freq_idx = FREQ_MIN - 1U;
 
     SPWM_PIN = 0;
 

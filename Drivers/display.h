@@ -1,4 +1,4 @@
-﻿#ifndef DISPLAY_H_
+#ifndef DISPLAY_H_
 #define DISPLAY_H_
 
 #include "config.h"
@@ -12,6 +12,7 @@
 
 void display_init(void);
 void display_set_value(unsigned char value);
+void display_blank(void);
 void display_task(void);
 
 #endif

@@ -1,4 +1,4 @@
-﻿#include "display.h"
+#include "display.h"
 
 /*
  * 数码管显示模块实现。
@@ -80,6 +80,11 @@ void display_set_value(unsigned char value)
     }
 
     display_update_digits(value);
+}
+
+void display_blank(void)
+{
+    display_all_off();
 }
 
 void display_task(void)
