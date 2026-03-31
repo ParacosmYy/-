@@ -29,28 +29,26 @@ const unsigned char code seg_table[10] = {
 /* ---- 扫描状态 ---- */
 static unsigned char scan_flag;     /* 0=显示十位, 1=显示个位 */
 
-/* ---- 主循环扫描函数 ---- */
+/* ---- 主循环扫描函数: 每个系统节拍只切换一位 ---- */
 void Display_Scan(void)
 {
     unsigned char freq;
 
-    /* 先熄灭, 消鬼影 */
+    freq = Freq_Get();
+
+    /* 先关位选, 再切段码, 最后开目标位, 避免串位/鬼影 */
     DIG_TENS = 1;
     DIG_ONES = 1;
 
-    freq = Freq_Get();
-
     if (scan_flag == 0) {
-        /* ---- 显示十位 (频率 < 10 时消隐) ---- */
         if (freq >= 10) {
             SEG_PORT = seg_table[freq / 10];
         } else {
-            SEG_PORT = 0xFF;    /* 消隐: 全部段灭 */
+            SEG_PORT = 0xFF;
         }
         DIG_TENS = 0;
         scan_flag = 1;
     } else {
-        /* ---- 显示个位 ---- */
         SEG_PORT = seg_table[freq % 10];
         DIG_ONES = 0;
         scan_flag = 0;

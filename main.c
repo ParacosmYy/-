@@ -20,6 +20,7 @@
 void main(void)
 {
     KeyEvent evt;
+    unsigned char key_div = 0;
 
     SPWM_Init();
     Display_Init();
@@ -33,15 +34,17 @@ void main(void)
     while (1) {
         if (Tick_Get()) {
             Tick_Clear();
+            Display_Scan();
 
-            evt = Key_Scan();
-            if (evt == KEY_UP) {
-                Freq_Inc();
-            } else if (evt == KEY_DOWN) {
-                Freq_Dec();
+            if (++key_div >= 10) {
+                key_div = 0;
+                evt = Key_Scan();
+                if (evt == KEY_UP) {
+                    Freq_Inc();
+                } else if (evt == KEY_DOWN) {
+                    Freq_Dec();
+                }
             }
         }
-
-        Display_Scan();  /* 主循环扫描数码管, 避免中断冲突 */
     }
 }
