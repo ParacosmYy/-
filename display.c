@@ -1,12 +1,11 @@
 #include "display.h"
-#include "tick.h"
 
 /*
  * Display driver for a dual common-anode 7-segment module.
  *
  * Segment lines are shared on P1 and digit enables are on P2.0/P2.1.
- * Foreground scheduling keeps scan timing deterministic without placing
- * display work inside the interrupt service routine.
+ * The foreground loop repeatedly calls Display_Task() to refresh one digit
+ * at a time. This keeps display refresh fully outside the timer ISR.
  */
 
 #define DISPLAY_DIGIT_COUNT  2U
@@ -20,7 +19,6 @@ static const unsigned char code kSegCode[10] = {
 };
 
 typedef struct {
-    unsigned char value;
     unsigned char digits[DISPLAY_DIGIT_COUNT];
     unsigned char scan_index;
 } DisplayContext;
@@ -35,8 +33,6 @@ static void Display_AllOff(void)
 
 static void Display_UpdateDigits(unsigned char value)
 {
-    s_display.value = value;
-
     if (value >= 10U) {
         s_display.digits[DISPLAY_TENS_INDEX] = value / 10U;
     } else {
@@ -67,6 +63,15 @@ static void Display_OutputDigit(unsigned char index)
     }
 }
 
+void Display_Init(void)
+{
+    SEG_PORT = DISPLAY_BLANK_CODE;
+    Display_AllOff();
+
+    s_display.scan_index = 0U;
+    Display_UpdateDigits(FREQ_MIN);
+}
+
 void Display_SetValue(unsigned char value)
 {
     if (value < FREQ_MIN) {
@@ -84,37 +89,6 @@ void Display_Task(void)
 
     s_display.scan_index++;
     if (s_display.scan_index >= DISPLAY_DIGIT_COUNT) {
-        s_display.scan_index = 0;
+        s_display.scan_index = 0U;
     }
-}
-
-void Timer1_ISR(void) interrupt 3 using 2
-{
-    static unsigned char div;
-
-    div++;
-    if (div >= DISP_TIMER_DIV) {
-        div = 0;
-        Tick_Notify();
-    }
-}
-
-void Display_Init(void)
-{
-    SEG_PORT = DISPLAY_BLANK_CODE;
-    Display_AllOff();
-
-    s_display.scan_index = 0;
-    Display_UpdateDigits(FREQ_MIN);
-
-    TMOD = (TMOD & 0x0F) | 0x20;
-    TH1 = 0;
-    TL1 = 0;
-
-    ET1 = 1;
-}
-
-void Display_Start(void)
-{
-    TR1 = 1;
 }

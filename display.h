@@ -4,18 +4,13 @@
 #include "config.h"
 
 /*
- * Dual 7-segment display driver.
+ * Foreground display driver for a dual common-anode 7-segment module.
  *
- * Timer1 only provides the system tick.
- * The foreground calls Display_Task() periodically to multiplex one digit
- * per invocation. The module owns the display cache so upper layers only
- * provide the value to be shown.
+ * Display refresh is executed only from the main while-loop.
+ * The timer is not used to drive multiplexing.
  */
 
-#define DISP_TIMER_DIV  7U
-
 void Display_Init(void);
-void Display_Start(void);
 void Display_SetValue(unsigned char value);
 void Display_Task(void);
 
