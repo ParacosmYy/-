@@ -78,6 +78,7 @@ void Display_Init(void)
     TL1 = 0;
 
     ET1 = 1;    /* 允许 Timer1 中断 */
+    PT1 = 1;    /* Timer1 高优先级, 与 Timer0 同级公平竞争 */
 }
 
 /* ---- 启动扫描 (EA=1 后调用) ---- */
