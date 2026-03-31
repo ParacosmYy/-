@@ -4,15 +4,25 @@
 #include "config.h"
 
 /*
- * SPWM 波形发生器模块
- * 使用 Timer0 Mode1 (16位) 双相中断生成 SPWM
+ * SPWM 输出模块。
+ *
+ * 使用 Timer0 中断输出 SPWM 波形。
+ * 模块仅负责波形生成，不处理按键和显示逻辑。
  */
 
+/* 每个正弦周期的采样点数 */
+#define SINE_POINTS     100U
+
+/* PWM 分辨率 */
+#define PWM_LEVELS      256U
+
+/* 单相最小计数值，防止定时过短 */
+#define MIN_PHASE_TICKS 100U
+
+/* 初始化 SPWM 模块 */
 void SPWM_Init(void);
+
+/* 启动 SPWM 输出 */
 void SPWM_Start(void);
 
-/* ---- SPWM 算法参数 ---- */
-#define SINE_POINTS     100             /* 每周期采样点数 */
-#define PWM_LEVELS      256             /* PWM 分辨率 (0~255), 2^n 使 ISR 除法变移位 */
-#define MIN_PHASE_TICKS 100             /* 最小相位钳位 (机器周期), 防 ISR 抵溢出 */
 #endif

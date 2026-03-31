@@ -4,30 +4,29 @@
 #include <REGX52.H>
 
 /*
- * 板级硬件配置
+ * 板级硬件配置文件。
  *
- * 只集中定义: 晶振、引脚映射、跨模块共享常量.
- * 频率状态由 freq 模块管理, 不再暴露全局变量.
- * 各模块的算法参数 (采样点数、消抖阈值等) 在各自 .h 中定义.
+ * 统一定义系统晶振、引脚映射以及跨模块共享常量。
+ * 业务状态不在本文件中保存，只提供硬件相关配置。
  */
 
-/* ---- 晶振 ---- */
-#define FOSC            11059200UL      /* 11.0592MHz */
+/* 系统晶振频率 */
+#define FOSC            11059200UL
 
-/* ---- 频率范围 (key / spwm / main 共享) ---- */
-#define FREQ_MIN        1               /* 最小频率 (Hz) */
-#define FREQ_MAX        20              /* 最大频率 (Hz) */
+/* 频率范围，单位：Hz */
+#define FREQ_MIN        1U
+#define FREQ_MAX        20U
 
-/* ---- SPWM 引脚 ---- */
-#define SPWM_PIN        P3_7            /* PWM 波形输出引脚 */
+/* SPWM 输出引脚 */
+#define SPWM_PIN        P3_7
 
-/* ---- 数码管引脚 ---- */
-#define SEG_PORT        P1              /* 段选端口 (a~g = P1.0~P1.6) */
-#define DIG_TENS        P2_0            /* 十位位选 (低电平有效) */
-#define DIG_ONES        P2_1            /* 个位位选 (低电平有效) */
+/* 数码管接口定义 */
+#define SEG_PORT        P1
+#define DIG_TENS        P2_0
+#define DIG_ONES        P2_1
 
-/* ---- 按键引脚 ---- */
-#define KEY_FREQ_UP     P3_3            /* K1: 频率+ */
-#define KEY_FREQ_DOWN   P3_2            /* K2: 频率- */
+/* 按键接口定义 */
+#define KEY_FREQ_UP     P3_3
+#define KEY_FREQ_DOWN   P3_2
 
 #endif

@@ -1,11 +1,10 @@
 #include "display.h"
 
 /*
- * Display driver for a dual common-anode 7-segment module.
+ * 数码管显示模块实现。
  *
- * Segment lines are shared on P1 and digit enables are on P2.0/P2.1.
- * The foreground loop repeatedly calls Display_Task() to refresh one digit
- * at a time. This keeps display refresh fully outside the timer ISR.
+ * 段选信号使用 P1，位选信号使用 P2.0 和 P2.1。
+ * 主循环持续调用 Display_Task()，每次只刷新一位，以实现动态显示。
  */
 
 #define DISPLAY_DIGIT_COUNT  2U

@@ -2,14 +2,19 @@
 #define TICK_H_
 
 /*
- * 系统节拍模块
+ * 系统节拍模块。
  *
- * Timer1 ISR 中置位, 主循环中查询并清除.
- * 独立于显示模块, 供任何需要定时轮询的模块使用.
+ * 中断中调用 Tick_Notify() 置位节拍标志，
+ * 前台通过 Tick_Get() 查询并使用 Tick_Clear() 清除。
  */
 
-void Tick_Notify(void);     /* ISR 中调用: 置位节拍标志 */
-unsigned char Tick_Get(void);  /* 主循环中查询 */
-void Tick_Clear(void);         /* 主循环中清除 */
+/* 中断中置位节拍标志 */
+void Tick_Notify(void);
+
+/* 读取当前节拍标志 */
+unsigned char Tick_Get(void);
+
+/* 清除节拍标志 */
+void Tick_Clear(void);
 
 #endif

@@ -1,79 +1,82 @@
 #include "key.h"
 
 /*
- * 按键扫描模块 — 状态机实现
+ * 按键扫描模块实现。
  *
- * 状态转移:
- *   IDLE  ──按下消抖──▶ HELD   (触发一次事件)
- *   HELD  ──持续按住──▶ REPEAT (触发长按事件)
- *   REPEAT ──持续按住──▶ REPEAT (每隔 REPEAT_INTERVAL 触发一次)
- *   任意状态 ──松开──▶ IDLE
- *
- * 只负责检测按键事件并返回, 不直接修改系统状态.
+ * 每个按键使用独立状态机。
+ * 检测到有效按下、长按起始或重复触发时返回对应事件。
  */
 
-/* ---- 按键状态 ---- */
-#define STATE_IDLE      0       /* 空闲: 等待按下 */
-#define STATE_HELD      1       /* 保持: 等待长按阈值 */
-#define STATE_REPEAT    2       /* 重复: 持续触发 */
+#define KEY_STATE_IDLE      0U
+#define KEY_STATE_HELD      1U
+#define KEY_STATE_REPEAT    2U
 
-/* ---- 单键状态上下文 ---- */
 typedef struct {
     unsigned char state;
     unsigned char count;
-} KeyCtx;
+} KeyContext;
 
-static KeyCtx k1;
-static KeyCtx k2;
+static KeyContext s_key_up;
+static KeyContext s_key_down;
 
-/* ---- 初始化 ---- */
-void Key_Init(void)
+static KeyEvent Key_Process(KeyContext *ctx, unsigned char pressed, KeyEvent evt)
 {
-    k1.state = STATE_IDLE; k1.count = 0;
-    k2.state = STATE_IDLE; k2.count = 0;
-}
-
-/* ---- 单键状态机 (内部) ---- */
-static KeyEvent key_process(KeyCtx *ctx, unsigned char pressed, KeyEvent evt)
-{
-    if (pressed) {
+    if (pressed != 0U) {
         ctx->count++;
+
         switch (ctx->state) {
-        case STATE_IDLE:
+        case KEY_STATE_IDLE:
             if (ctx->count >= KEY_DEBOUNCE_COUNT) {
-                ctx->state = STATE_HELD;
-                ctx->count = 0;
+                ctx->state = KEY_STATE_HELD;
+                ctx->count = 0U;
                 return evt;
             }
             break;
-        case STATE_HELD:
+
+        case KEY_STATE_HELD:
             if (ctx->count >= KEY_HOLD_START) {
-                ctx->state = STATE_REPEAT;
-                ctx->count = 0;
+                ctx->state = KEY_STATE_REPEAT;
+                ctx->count = 0U;
                 return evt;
             }
             break;
-        case STATE_REPEAT:
+
+        case KEY_STATE_REPEAT:
             if (ctx->count >= KEY_REPEAT_INTERVAL) {
-                ctx->count = 0;
+                ctx->count = 0U;
                 return evt;
             }
+            break;
+
+        default:
+            ctx->state = KEY_STATE_IDLE;
+            ctx->count = 0U;
             break;
         }
     } else {
-        ctx->state = STATE_IDLE;
-        ctx->count = 0;
+        ctx->state = KEY_STATE_IDLE;
+        ctx->count = 0U;
     }
+
     return KEY_NONE;
 }
 
-/* ---- 按键扫描 (主循环中调用, 非阻塞) ---- */
+void Key_Init(void)
+{
+    s_key_up.state = KEY_STATE_IDLE;
+    s_key_up.count = 0U;
+    s_key_down.state = KEY_STATE_IDLE;
+    s_key_down.count = 0U;
+}
+
 KeyEvent Key_Scan(void)
 {
     KeyEvent evt;
 
-    evt = key_process(&k1, KEY_FREQ_UP == 0, KEY_UP);
-    if (evt != KEY_NONE) return evt;
+    evt = Key_Process(&s_key_up, (KEY_FREQ_UP == 0U), KEY_UP);
+    if (evt != KEY_NONE) {
+        return evt;
+    }
 
-    return key_process(&k2, KEY_FREQ_DOWN == 0, KEY_DOWN);
+    return Key_Process(&s_key_down, (KEY_FREQ_DOWN == 0U), KEY_DOWN);
 }

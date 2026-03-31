@@ -387,6 +387,11 @@
               <FilePath>.\main.c</FilePath>
             </File>
             <File>
+              <FileName>app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app.c</FilePath>
+            </File>
+            <File>
               <FileName>spwm.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\spwm.c</FilePath>

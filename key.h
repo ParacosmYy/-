@@ -4,24 +4,28 @@
 #include "config.h"
 
 /*
- * 按键输入模块
- * K1: 频率增加, K2: 频率减少
- * 非阻塞计数消抖 + 长按连按, 返回按键事件, 由主循环处理.
+ * 按键扫描模块。
+ *
+ * 提供非阻塞式按键扫描，支持消抖、长按和连发。
+ * 模块只负责输出按键事件，不直接修改系统状态。
  */
 
-/* ---- 按键时序参数 (主循环约 2ms/次) ---- */
-#define KEY_DEBOUNCE_COUNT  10          /* 消抖阈值: 10 × 2ms ≈ 20ms */
-#define KEY_HOLD_START      200         /* 长按延迟: 200 × 2ms ≈ 400ms */
-#define KEY_REPEAT_INTERVAL 40          /* 重复间隔: 40 × 2ms ≈ 80ms */
+/* 按键时序参数，基于约 2 ms 的扫描节拍 */
+#define KEY_DEBOUNCE_COUNT  10U
+#define KEY_HOLD_START      200U
+#define KEY_REPEAT_INTERVAL 40U
 
-/* ---- 按键事件类型 ---- */
+/* 按键事件类型 */
 typedef enum {
-    KEY_NONE,       /* 无事件 */
-    KEY_UP,         /* K1: 频率增加 */
-    KEY_DOWN        /* K2: 频率减少 */
+    KEY_NONE = 0,
+    KEY_UP,
+    KEY_DOWN
 } KeyEvent;
 
+/* 初始化按键状态机 */
 void Key_Init(void);
+
+/* 扫描按键并返回事件 */
 KeyEvent Key_Scan(void);
 
 #endif
